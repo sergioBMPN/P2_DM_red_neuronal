@@ -1,7 +1,6 @@
 import numpy as np
 import os
 #import tensorflow as tf
-from builtins import print
 
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 #import tensorflow as tf
@@ -16,23 +15,18 @@ class xorMLP(object):
         self.X = np.array([[0,0],[0,1],[1,0],[1,1]])
         self.Y = np.array([[0],[1],[1],[0]])
         self.bias=-1
-   
+
+        # Asignamos unos valores aleatorios (entre -1 y 1) para los pesos de las entradas que van a la neurona de la capa oculta
+        rand = np.random.uniform(-1, 1, size=6)
+        rand = rand.round(5)
+        #capaOculta
+        self.hide_w = np.array([(self.bias, rand[0], rand[1]), (self.bias,rand[2], rand[3])])
+
+        # Asignamos unos valores aleatorios (entre -1 y 1) para los pesos de las entradas que van a la neurona de la capa de salida
+        self.output_w = np.array([(self.bias,rand[4], rand[5])])
+
+
     def fit(self):
-        #Asignamos unos valores aleatorios (entre -1 y 1) para los pesos de las entradas que van a la neurona de la capa oculta
-        rand=np.random.uniform(-1, 1, size=7)
-        rand=rand.round(5)
-        capaOculta=np.array([rand[0],rand[1]])
-       
-        #Asignamos un valor aleatorio (entre -1 y 1) para el peso de la entrada bias de la neurona de la capa oculta
-        pesoBias1 = np.array([rand[2]])
-        biasCapaOculta=self.bias
-       
-        #Asignamos unos valores aleatorios (entre -1 y 1) para los pesos de las entradas que van a la neurona de la capa de salida
-        capaSalida=np.array([rand[3],rand[4],rand[5]])
-       
-        #Asignamos un valor aleatorio (entre -1 y 1) para el peso de la entrada bias de la neurona de la capa de salida
-        pesoBias2 = np.array([rand[6]])
-        biasCapaSalida=self.bias
        
         #Establecemos un valor para el error pequeño, que será la condición de parada de entrenamiento de la red
         #En el caso de que la suma (en valor absoluto) de los errores para los 4 casos es más pequeño que el error que hemos establecido
@@ -43,62 +37,60 @@ class xorMLP(object):
         done=False
        
         while not done:
-          if sumaEO < errorMAX:#Condición de parada del entrenamiento de la red
-            done=True
-            #Estas variables guardarán los valores de los pesos finales para utilizarlos posteriormente en el predict
-            self.pesosH = np.array(capaOculta)
-            self.pesoBiasH = np.array(pesoBias1)
-            self.pesosO = np.array(capaSalida)
-            self.pesoBiasO = np.array(pesoBias2)
-              
-          else:
-            #Comienza el proceso de Feedfordward
-            sumaEO = 0
-            
-            #Con este bucle se calcula por un lado  el sumatorio de todas las entradas de la neurona de la capa oculta por sus correspondientes pesos
-            #para calcular la función activación de esta neurona, que en este caso será la sigmoidal
-            for x,y in zip(self.X,self.Y):
-              suma=biasCapaOculta*pesoBias1
-              for i in range(0,2,1):
-                suma+=((x[i]*capaOculta[i]))
-              fActOculta=1/(1+np.exp(-suma))
-              
-              #Por otro lado calculamos el sumatorio de todas las entradas de la neurona de la capa de salida por sus correspondientes pesos
-              #para calcular la función activación de esta neurona, que en este caso será la sigmoidal
-              suma=biasCapaSalida*pesoBias2
-              suma+=capaSalida[-1] * fActOculta#una entrada de la neurona de salida será el valor de salida que hemos obtenido de la neurona de la capa oculta
-              for i in range(0,2,1):
-                suma+=((x[i]*capaSalida[i]))
-              fActSalida=1/(1+np.exp(-suma))
-             
-              #Calculamos el error que hemos obtenido con el valor de salida de la neurona de salida, y la comparamos con el valor esperado y
-              eO=(fActSalida*(1-fActSalida))*(y[0] - fActSalida)
-              sumaEO += abs(eO)#Actualizamos el valor de la suma de los errores de salida
-              
-              #A continuación comienza el proceso de BackPropagation
-              oldCapaSalida=capaSalida[-1]#Guardamos el valor del peso de la salida de la neurona de la capa de salida, ya que posteriormente lo tendremos que utilizar para calcular el error de la capa oculta
-             
-              #incWho
-              #Actualizamos los pesos que van de la neurona de la capa oculta a la neurona de la capa de salida
-              capaSalida[-1]+=self.aprendizaje*eO*fActOculta
-             
-              #incWio
-              #Actualizamos los pesos que van de las neurona de la capa de entrada a la neurona de la capa de salida, así como tambien peso del bias
-              capaSalida[0]+=self.aprendizaje*eO*x[0]
-              capaSalida[1]+=self.aprendizaje*eO*x[1]
-              pesoBias2+= self.aprendizaje*eO*biasCapaSalida
-             
-              #Calculamos el error de la capa oculta con el valor del peso que habiamos guardado previamente antes de actualizarlo
-              eh=(fActOculta*(1-fActOculta))*eO*oldCapaSalida
-              oldCapaOculta=capaOculta
-             
-              #incWih
-              #Con el error de la capa oculta, a continuación, actualizamos los pesos que van de las neurona de la capa de entrada a la neurona de la capa oculta, así como tambien peso del bias
-              capaOculta[0]+=self.aprendizaje*eh*x[0]
-              capaOculta[1]+=self.aprendizaje*eh*x[1]
-              pesoBias1 += self.aprendizaje*eh*biasCapaOculta
-        
-              k+=1
+              if sumaEO < errorMAX:#Condición de parada del entrenamiento de la red
+                done=True
+
+              else:
+                    #Comienza el proceso de Feedfordward
+                    sumaEO = 0
+
+                    #Con este bucle se calcula por un lado  el sumatorio de todas las entradas de la neurona de la capa oculta por sus correspondientes pesos
+                    #para calcular la función activación de esta neurona, que en este caso será la sigmoidal
+                    for x,y in zip(self.X,self.Y):
+
+                        fAct_h = np.array([])
+                        for tup in self.hide_w:
+                            suma=np.dot(tup,x)
+                            fAct_h=np.append(fAct_h, 1/(1+np.exp(-suma)))
+
+                        fAct_o = np.array([])
+                        for tup in self.output_w:
+                            suma = np.dot(tup, x)
+                            fAct_o = np.append(fAct_o, 1 / (1 + np.exp(-suma)))
+
+
+
+                        #Calculamos el error que hemos obtenido con el valor de salida de la neurona de salida, y la comparamos con el valor esperado y
+                        eO=(fAct_o*(1-fAct_o))*(y[0] - fAct_o)
+                        sumaEO += abs(eO)#Actualizamos el valor de la suma de los errores de salida
+
+                        #A continuación comienza el proceso de BackPropagation
+                        old_output_w=self.output_w[0]#Guardamos el valor del peso de la salida de la neurona de la capa de salida, ya que posteriormente lo tendremos que utilizar para calcular el error de la capa oculta
+
+                        #incWho
+                        #Actualizamos los pesos que van de la neurona de la capa oculta a la neurona de la capa de salida
+                        self.output_w[0]+=self.aprendizaje*eO*fAct_h
+
+                        #incWio
+                        #Actualizamos los pesos que van de las neurona de la capa de entrada a la neurona de la capa de salida, así como tambien peso del bias
+                        
+                        for element in self.output_w:
+                            element += self.aprendizaje * eO * self.output_w[0]
+                        self.output_w[1] += self.aprendizaje*eO*x[0]
+                        self.output_w[2] += self.aprendizaje*eO*x[1]
+
+
+                        #Calculamos el error de la capa oculta con el valor del peso que habiamos guardado previamente antes de actualizarlo
+                        eh=(fActOculta*(1-fActOculta))*eO*oldCapaSalida
+                        oldCapaOculta=capaOculta
+
+                        #incWih
+                        #Con el error de la capa oculta, a continuación, actualizamos los pesos que van de las neurona de la capa de entrada a la neurona de la capa oculta, así como tambien peso del bias
+                        capaOculta[0]+=self.aprendizaje*eh*x[0]
+                        capaOculta[1]+=self.aprendizaje*eh*x[1]
+                        pesoBias1 += self.aprendizaje*eh*biasCapaOculta
+
+                        k+=1
 
         print ("Iteraciones totales: ",k)
 
