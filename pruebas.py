@@ -12,6 +12,8 @@ def funct_act(x,bias, peso, num_entradas):
     fActOculta = 1 / (1 + np.exp(-suma))
 
 if __name__ == '__main__':
-    rand = np.random.uniform(-1, 1, size=8)
-    rand = rand.round(5)
-    print(np.array([(rand[0], rand[1]),(rand[2], rand[3])]))
+    a=np.array([1,1,2])
+    b=np.array([2,2,3])
+    c=np.array([a[0]])
+    temp = np.array(np.concatenate(([0], a)))
+    print(sum([1]))

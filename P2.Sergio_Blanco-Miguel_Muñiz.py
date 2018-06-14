@@ -17,17 +17,17 @@ class xorMLP(object):
         self.bias=-1
 
         # Asignamos unos valores aleatorios (entre -1 y 1) para los pesos de las entradas que van a la neurona de la capa oculta
-        rand = np.random.uniform(-1, 1, size=6)
+        rand = np.random.uniform(-1, 1, size=9)
         rand = rand.round(5)
         #capaOculta
-        self.hide_w = np.array([(self.bias, rand[0], rand[1]), (self.bias,rand[2], rand[3])])
+        self.hide_w = np.array([(rand[0], rand[1],rand[2]), (rand[3],rand[4],rand[5])])
 
         # Asignamos unos valores aleatorios (entre -1 y 1) para los pesos de las entradas que van a la neurona de la capa de salida
-        self.output_w = np.array([(self.bias,rand[4], rand[5])])
+        self.output_w = np.array([(rand[6],rand[7],rand[8])])
 
 
     def fit(self):
-       
+
         #Establecemos un valor para el error pequeño, que será la condición de parada de entrenamiento de la red
         #En el caso de que la suma (en valor absoluto) de los errores para los 4 casos es más pequeño que el error que hemos establecido
         #quiere decir que la red de neuronas esta entrenada con cierta precisión
@@ -47,48 +47,55 @@ class xorMLP(object):
                     #Con este bucle se calcula por un lado  el sumatorio de todas las entradas de la neurona de la capa oculta por sus correspondientes pesos
                     #para calcular la función activación de esta neurona, que en este caso será la sigmoidal
                     for x,y in zip(self.X,self.Y):
-
+                        x_temp=np.array(np.concatenate(([1],x)))
                         fAct_h = np.array([])
-                        for tup in self.hide_w:
-                            suma=np.dot(tup,x)
-                            fAct_h=np.append(fAct_h, 1/(1+np.exp(-suma)))
+                        for neurona in self.hide_w:
+                            temp = np.array([])
+                            for peso in range(1, len(neurona), 1):
+                                temp = np.append(fAct_h, 1 / (1 + np.exp(- np.dot(neurona, x_temp))))
+                            fAct_h = np.append(fAct_h,sum(temp))
 
                         fAct_o = np.array([])
-                        for tup in self.output_w:
-                            suma = np.dot(tup, x)
-                            fAct_o = np.append(fAct_o, 1 / (1 + np.exp(-suma)))
-
+                        fAct_h_temp=np.array(np.concatenate(([1],fAct_h)))
+                        for neurona in self.output_w:
+                            temp = np.array([])
+                            for peso in range(1, len(neurona), 1):
+                                temp = np.append(fAct_o, 1 / (1 + np.exp(- np.dot(neurona, fAct_h_temp))))
+                            fAct_o = np.append(fAct_o,sum(temp))
 
 
                         #Calculamos el error que hemos obtenido con el valor de salida de la neurona de salida, y la comparamos con el valor esperado y
-                        eO=(fAct_o*(1-fAct_o))*(y[0] - fAct_o)
-                        sumaEO += abs(eO)#Actualizamos el valor de la suma de los errores de salida
+                        eO=np.array([])
+                        for neurona in fAct_o:
+                            eO= np.append(eO,(neurona*(1-neurona))*(y[0] - neurona))
+                        sumaEO += sum(abs(eO))#Actualizamos el valor de la suma de los errores de salida
 
                         #A continuación comienza el proceso de BackPropagation
-                        old_output_w=self.output_w[0]#Guardamos el valor del peso de la salida de la neurona de la capa de salida, ya que posteriormente lo tendremos que utilizar para calcular el error de la capa oculta
+                        old_output_w=self.output_w#Guardamos el valor del peso de la salida de la neurona de la capa de salida, ya que posteriormente lo tendremos que utilizar para calcular el error de la capa oculta
 
                         #incWho
-                        #Actualizamos los pesos que van de la neurona de la capa oculta a la neurona de la capa de salida
-                        self.output_w[0]+=self.aprendizaje*eO*fAct_h
+                        #Actualizamos los pesos que van de las neuronas de la capa oculta a la neurona de la capa de salida
+                        for neurona in range(0, len(self.output_w), 1):
+                            for peso in range(1, len(self.output_w[neurona]), 1):
+                                self.output_w[neurona][peso] += self.aprendizaje * eO * fAct_h[neurona]
 
-                        #incWio
-                        #Actualizamos los pesos que van de las neurona de la capa de entrada a la neurona de la capa de salida, así como tambien peso del bias
-                        
-                        for element in self.output_w:
-                            element += self.aprendizaje * eO * self.output_w[0]
-                        self.output_w[1] += self.aprendizaje*eO*x[0]
-                        self.output_w[2] += self.aprendizaje*eO*x[1]
+                        ###############Es necesario incWio  porque no hay conexion directa i-o????????
 
 
                         #Calculamos el error de la capa oculta con el valor del peso que habiamos guardado previamente antes de actualizarlo
-                        eh=(fActOculta*(1-fActOculta))*eO*oldCapaSalida
-                        oldCapaOculta=capaOculta
+                        eh = np.array([])
+                        for neurona in range(0,len(fAct_h),1):
+                            eh = np.append(eh, (fAct_h[neurona] * (1 - fAct_h[neurona])) * (eO * old_output_w[0][neurona+1]))
+
+                        old_hide_w=self.hide_w
 
                         #incWih
                         #Con el error de la capa oculta, a continuación, actualizamos los pesos que van de las neurona de la capa de entrada a la neurona de la capa oculta, así como tambien peso del bias
-                        capaOculta[0]+=self.aprendizaje*eh*x[0]
-                        capaOculta[1]+=self.aprendizaje*eh*x[1]
-                        pesoBias1 += self.aprendizaje*eh*biasCapaOculta
+                        temp=np.array(np.concatenate(([0],x)))
+                        for neurona in range(0, len(self.hide_w), 1):
+                            for peso in range(0, len(self.hide_w[neurona]), 1):
+                                self.hide_w[neurona][peso] += self.aprendizaje * eh[neurona] * x[neurona]
+
 
                         k+=1
 
@@ -102,20 +109,23 @@ class xorMLP(object):
         x = [x1, x2]
         """
         #Proceso para obtener el valor de la red de neuronas, con los pesos que habiamos guardado en el fit
-        suma=self.pesoBiasH*self.bias
+        fAct_h = np.array([])
+        for neurona in self.hide_w:
+            temp = np.array([])
+            for peso in range(1, self.hide_w[neurona], 1):
+                temp = np.append(fAct_h, 1 / (1 + np.exp(- np.dot(neurona, x))))
+            fAct_h = np.append(sum(temp))
 
-        for i in range(0,2,1):
-          suma+=((x[i]*self.pesosH[i]))
-        fActOculta=1/(1+np.exp(-suma))
-       
-        suma=self.pesoBiasO*self.bias
-        suma+=self.pesosO[-1] * fActOculta
-        for i in range(0,2,1):
-          suma+=((x[i]*self.pesosO[i]))
-        fActSalida=1/(1+np.exp(-suma))
-        
-        #Devolvemos el valor de salida estimado
-        return fActSalida
+
+        fAct_o = np.array([])
+        for neurona in self.output_w:
+            temp = np.array([])
+            for peso in range(1, self.output_w[neurona], 1):
+                temp = np.append(fAct_o, 1 / (1 + np.exp(- np.dot(neurona, fAct_h))))
+            fAct_o = np.append(sum(temp))
+
+        return fAct_o
+
 
 
 class DeepMLP(object):
@@ -181,18 +191,18 @@ if __name__ == '__main__':
     #from tensorflow.examples.tutorials.mnist import input_data
     #mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
     #TODO MNIST TESTS
-    t=DeepMLP([1,2,3,4,5],0.5)
+    #t=DeepMLP([1,2,3,4,5],0.5)
 
     # Pruebas para xorMLP
     X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
     Y = np.array([[0], [1], [1], [0]])
 
+    i = xorMLP(0.5)
+    i.fit()
     for i in range(0, 4, 1):
         x = np.array(X[i])
         print("X:", x)
         print("Y esperada:", Y[i])
-        i = xorMLP(0.5)
-        i.fit()
         res = int(i.predict(x))
         print("Y calculada: ", res, "\n")
 
